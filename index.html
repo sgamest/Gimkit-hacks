@@ -771,22 +771,25 @@ function showFallback(title, message, url) {
 async function loadGames() {
   try {
     const res = await fetch('./games.json', { cache: 'no-store' });
-    const jsonGames = await res.json();
+    let data = await res.json();
 
-    let extraGames = [];
+    if (!Array.isArray(data)) throw new Error("games.json must be an array");
 
-    try {
-      await import('./games.js');
-      extraGames = window.GAMES_EXTRA || [];
-    } catch (e) {
-      console.warn("No extra games file loaded");
-    }
-
-    games = [...jsonGames, ...extraGames];
+    // ✅ sort alphabetically
+    games = data
+      .filter(g => g && g.name && g.url)
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     render(games);
     buildHomepage();
     gameCountEl.textContent = `${games.length} games`;
+
+    // restore last game
+    const saved = localStorage.getItem('lastGame');
+    if (saved) {
+      const game = games.find(g => g.name === saved);
+      if (game) setTimeout(() => launchGame(game), 200);
+    }
 
   } catch (e) {
     console.error(e);
@@ -795,6 +798,7 @@ async function loadGames() {
         Failed to load games.json<br>${escapeHtml(e.message)}
       </div>
     `;
+    gameCountEl.textContent = '0 games';
   }
 }
   //launch games
