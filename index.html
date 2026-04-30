@@ -766,32 +766,38 @@ function showFallback(title, message, url) {
   frame.srcdoc = makeFallbackPage(title, message, url);
 }
 
+
+  //load games
 async function loadGames() {
   try {
     const res = await fetch('./games.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const jsonGames = await res.json();
 
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('games.json must be an array');
+    let extraGames = [];
 
-    games = data.filter(g => g && typeof g.name === 'string' && typeof g.url === 'string');
+    try {
+      await import('./games.js');
+      extraGames = window.GAMES_EXTRA || [];
+    } catch (e) {
+      console.warn("No extra games file loaded");
+    }
+
+    games = [...jsonGames, ...extraGames];
 
     render(games);
     buildHomepage();
     gameCountEl.textContent = `${games.length} games`;
 
-    const saved = localStorage.getItem('lastGame');
-    if (saved) {
-      const game = games.find(g => g.name === saved);
-      if (game) setTimeout(() => launchGame(game), 200);
-    }
   } catch (e) {
     console.error(e);
-    listEl.innerHTML = `<div style="padding:12px;color:#ff4d7d;font-size:0.8rem">Failed to load games.json<br>${escapeHtml(e.message)}</div>`;
-    gameCountEl.textContent = '0 games';
+    listEl.innerHTML = `
+      <div style="padding:12px;color:#ff4d7d;font-size:0.8rem">
+        Failed to load games.json<br>${escapeHtml(e.message)}
+      </div>
+    `;
   }
 }
-
+  //launch games
 async function launchGame(game) {
   currentGame = game;
 
@@ -843,6 +849,9 @@ async function launchGame(game) {
   }
 }
 
+
+  //fullscreen
+  
 function fullscreenGame() {
   if (!currentGame) {
     alert('Load a game first');
