@@ -736,7 +736,7 @@ function escapeHtml(text) {
 function makeFallbackPage(title, message, url) {
   const safeTitle = escapeHtml(title);
   const safeMessage = escapeHtml(message);
-  const safeUrl = String(url || '').replace(/'/g, '\\'');
+  const safeUrl = String(url || '').replace(/'/g, "\\'");
   return `
 <!DOCTYPE html>
 <html>
